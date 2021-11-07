@@ -2,7 +2,7 @@
   client.html
 
   Client HTML page.
-
+  
   -->
 
 <!DOCTYPE html>
@@ -11,7 +11,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tabooo</title>
-    <!-- <script src="https://unpkg.com/vue@next"></script> -->
+    <script src="https://unpkg.com/vue@next"></script>
     <!-- roomId for socket.io -->
     <script type="text/javascript">
       const ROOM_ID = "tabooo";
@@ -51,45 +51,31 @@
   </head>
   <body>
     <div id="app">
-      <div id="playerinfobar">
-        <h3><span id="playerinfomsg"></span></h3>
-      </div>
-      <div id="infobar">
-        <h3><span id="infomsg">Host - Click Start Game</span></h3>
-	       <!-- top bar for showing messages to players -->
-      </div>
+      <infobar v-bind:infobarmsg="infobarmsg">
+        <!-- text info on current state of game - whose turn and what to do next -->
+      </infobar>
 
-      <div id="video-grid">
-        <!-- create video grid - 4 squares -->
+      <div id="playertopbar">
+        <!-- video div element, and player caption (P.CAP.) element for each player
+             P.CAP. element: player name, score, high-level game info -->.
+        <playervideo></playervideo>
+        <playercaption></playercaption>
       </div>
 
       <div id="gamearea">
-        <!-- central game board. For tabooo, show buttons, timer and card here -->
-	<div id="timer_div"><h3><span id="timer"></span></h3></div>
-	<div id="buttons">
-    <button id="sbutton">Start Game</button>
-	  <button id="cbutton">Team Guessed Correct!</button>
-	  <button id="wbutton">Pass / Got Buzzed!</button>
-	</div>
-	<div id="wordcard">
-	  <h2><span id="word2guess_header">Word to Guess: </span><span id="word2guess">ELEPHANT</span></h2>
-	  <h4><span id="tabheader">Words you cannot say</span></h4>
-	  <ul>
-	    <li id="tabword1">Gray</li>
-	    <li id="tabword2">Big</li>
-	    <li id="tabword3">Safari</li>
-	    <li id="tabword4">Trunk</li>
-	    <li id="tabword5">Nose</li>
-	  </ul>
-	</div>
+        <!-- game board in the center, player hand towards the bottom -->
+        <gameboard></gameboard>
+        <div><p>----------------------</p></div>
+        <playerhand></playerhand>
       </div>
 
       <!-- bottom contains controls for video/audio, settings,... -->
       <div id="controlbar">
+	<controlbar></controlbar>
       </div>
     </div>
 
+    <!-- JS code for Vue and socket.io stuff -->
+    <script src="client.js"></script>
   </body>
-  <!-- JS code for Vue and socket.io stuff -->
-  <script type="module" src="./client.js"></script>
 </html>

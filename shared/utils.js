@@ -1,6 +1,0 @@
-/*
-  utils.js
-
-  Contains any useful shared utility functions.
-
-*/
