@@ -1,0 +1,7 @@
+{
+  "name": "tabooo-client",
+  "version": "0.0.1",
+  "description": "web client for tabooo",
+  "type": "module",    
+  "dependencies": {}
+}
