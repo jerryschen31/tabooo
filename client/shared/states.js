@@ -168,7 +168,7 @@ export class GameState{
     this.players = _players;  // array of Player objects
     this.players_each_team = {};  // e.g., {0: [p1,p2,p3], 1: [p4,p5,p6]} where 0 and 1 are team indexes
     this.game_vars = {
-      "num_rounds": 3,       // FUTURE can be read in as input
+      "num_rounds": 4,       // FUTURE can be read in as input
       "starting_team": 0,    // index of the team that starts the game (if NOT a team game, there's only 1 team)
       "starting_current_player": 0,  // index of the player that starts the game for each team
       "starting_active_player": 0    // index of the player that starts the game for each team
@@ -331,6 +331,17 @@ export class GameState{
   }
   setActiveTeamToCurrent(){
     this.state_vars["active_team"] = this.state_vars["current_team"];
+  }
+
+  // get scores for each team (just get score of 1st player in each team), returned as dict {0: 2, 1: 3,...}
+  getScoreEachTeam(){
+    let _team_scores = {};
+    let _teams = Object.keys(this.players_each_team);
+    console.log('PLAYERS EACH TEAM: ', this.players_each_team);
+    for( let i=0;i<_teams.length; i++){
+      _team_scores[_teams[i]] = this.players[this.players_each_team[_teams[i]][0]].score;
+    }
+    return _team_scores;
   }
 
   // get a player from the array, by the unique ID passed in (socket ID). returns index.
@@ -515,7 +526,7 @@ export var StateArray = [
     "type": "game",
     "enterstate_event": "checkGameStatus",
     "instate_events": { "checkGameStatus": checkGameStatus },
-    "transitions": { "checkGameStatus": [3, 9999] }
+    "transitions": { "checkGameStatus": [3, 5] }
   },
   { "id": 3,
     "name": "change_active_team",
@@ -533,12 +544,12 @@ export var StateArray = [
     "transitions": {"waitForNextRound": [4],
                     "startNextRound": [1]}
   },
-  { "id": 9999,
+  { "id": 5,
     "name": "endGame",
     "type": "game",
     "enterstate_event": "finalScoring",
     "instate_events": {"finalScoring": finalScoring},
-    "transitions": {}
+    "transitions": {"finalScoring": [5]}
   }
 
 ];
@@ -577,8 +588,9 @@ function startNextRound( _GS, _se, _sid, _clientid = '' ){
   let _next_team_players = _GS.getPlayersWithinNextCurrentTeam();
   let _next_team = _GS.getNextCurrentTeam; // assumes just 2 teams
   let _next_team_score = _GS.players[_next_team_players[0]].score;
+  let _current_round = _GS.getCurrentRound;
 
-  _GS.setStateStatus = "Round has started! Team " + String(_current_team) + " score: " + String(_current_team_score) + ". Team "+String(_next_team)+" score: "+String(_next_team_score);;
+  _GS.setStateStatus = "Round "+String(_current_round) + " has started! Team " + String(_current_team) + " score: " + String(_current_team_score) + ". Team "+String(_next_team)+" score: "+String(_next_team_score);
 
   return [_GS, _new_sid, _next_event];
 }
@@ -589,7 +601,7 @@ function checkGameStatus( _GS, _se, _sid, _clientid = '' ){
   let _game_vars = _GS.getGameVars;
   let _new_sid;
   let _next_event;
-  if( _GS.getCurrentRound > _GS.getNumRounds){
+  if( _GS.getCurrentRound >= _GS.getNumRounds){
     [_new_sid, _next_event] = _GS.setupTransitionToNextState( _sid, _se, 1);
   }
   else{
@@ -600,7 +612,7 @@ function checkGameStatus( _GS, _se, _sid, _clientid = '' ){
 
 function correctButtonClicked( _GS, _se, _sid, _clientid = '' ){
   // if 'correct!' button was clicked, current team gets +1
-  let _new_sid = StateArray[_sid]["transitions"][_se];
+  let [_new_sid, _next_event] = _GS.setupTransitionToNextState( _sid, _se);
   let _current_team_players = _GS.getPlayersWithinCurrentTeam();
   let _current_team = _GS.getCurrentTeam;
   let _next_team_players = _GS.getPlayersWithinNextCurrentTeam();
@@ -611,7 +623,7 @@ function correctButtonClicked( _GS, _se, _sid, _clientid = '' ){
   for( let i=0;i<_current_team_players.length;i++){
     _new_score = _GS.players[_current_team_players[i]].incrementScore();
   }
-  _GS.setStateStatus = "Correct! Team " + String(_current_team) + " score: " + String(_new_score) + ". Team "+String(_next_team)+" score: "+String(_next_team_score);;
+  _GS.setStateStatus = "Correct! Team " + String(_current_team) + " score: " + String(_new_score) + ".";
   return [_GS, _new_sid, StateArray[_new_sid]["enterstate_event"]];
 }
 
@@ -628,7 +640,7 @@ function passButtonClicked( _GS, _se, _sid, _clientid = '' ){
   for( let i=0;i<_current_team_players.length;i++){
     _new_score = _GS.players[_current_team_players[i]].decrementScore();
   }
-  _GS.setStateStatus = "Pass/Buzz! Team " + String(_current_team) + " score: " + String(_new_score) + ". Team "+String(_next_team)+" score: "+String(_next_team_score);
+  _GS.setStateStatus = "Pass/Buzz! Team " + String(_current_team) + " score: " + String(_new_score) + ".";
   return [_GS, _new_sid,  _next_event];
 }
 
@@ -637,7 +649,8 @@ function timerUp( _GS, _se, _sid, _clientid = '' ){
     // if timer is up, we reset the timer
     // let _new_sid = StateArray[_sid]["transitions"][_se];
     let [_new_sid, _next_event] = _GS.setupTransitionToNextState( _sid, _se);
-    _GS.setStateStatus = "Time is up! Up next: Team "+String(_GS.getNextCurrentTeam);
+    let _current_round = _GS.getCurrentRound;
+    _GS.setStateStatus = "Round "+String(_current_round)+": Time is up! Up next: Team "+String(_GS.getNextCurrentTeam)+" - click Start Next Round!";
     return [_GS, _new_sid, _next_event];
   }
   else{
@@ -650,9 +663,10 @@ function changeActiveTeam( _GS, _se, _sid, _clientid = ''){
   // update team
   _GS.updateCurrentAndActiveTeam();
   // update to next round
-  if( _GS.getActivePlayer == _GS.getStartingActivePlayer){
-    _GS.updateRound();
-  }
+  _GS.updateRound();
+  // if( _GS.getActivePlayer == _GS.getStartingActivePlayer){
+  //  _GS.updateRound();
+  // }
   return [_GS, _new_sid, _next_event];
 }
 
@@ -664,6 +678,6 @@ function endGame( _GS, _se, _sid, _clientid = ''){
   let _next_team_players = _GS.getPlayersWithinNextCurrentTeam();
   let _next_team = _GS.getNextCurrentTeam; // assumes just 2 teams
   let _next_team_score = _GS.players[_next_team_players[0]].score;
-  _GS.setStateStatus = "GAME OVER! FINAL SCORES - Team " + String(_current_team) + " score: " + String(_current_team_score) + ". Team "+String(_next_team)+" score: "+String(_next_team_score);;
+  _GS.setStateStatus = "GAME OVER! FINAL SCORES - Team " + String(_current_team) + " score: " + String(_current_team_score) + ". Team "+String(_next_team)+" score: "+String(_next_team_score);
   return [_GS, -1, ''];
 }

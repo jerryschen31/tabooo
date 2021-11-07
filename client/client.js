@@ -57,16 +57,6 @@ socket.on('update-state', stateobj=>{
     console.log('state object sent from server to client: ', GS);
 });
 
-
-/*
-socket.on('start-timer', ()=>{
-  // server tells all timers to start (may cause a little out-of-sync?)
-  console.log('Timer start!');
-  // save current player BEFORE starting timer (funky stuff can happen during the round)
-  clientStartTimer( GS.getCurrentPlayerId);
-});
-*/
-
 ///////////////////////////////////////////////
 // Event Listening Functions
 ///////////////////////////////////////////////
@@ -171,7 +161,14 @@ function updateClientDOM( _GS){
   if( _GS.getCurrentState != 0){
     let _player_me = _GS.getPlayerById(socket.id);
     let _team_me = _GS.players[_player_me].team;
-    playerinfomsg.innerHTML = "You are player "+String(_player_me)+" on Team "+String(_team_me);
+    let _team_scores = _GS.getScoreEachTeam();
+    let _teams = Object.keys(_team_scores);
+    let _playerinfomsg = "You are player "+String(_player_me)+" on Team "+String(_team_me)+".";
+    console.log('TEAM SCORES: ', _team_scores);
+    for( let i=0; i<_teams.length; i++){
+      _playerinfomsg += " Team "+String(_teams[i])+" - Score: "+String(_team_scores[_teams[i]])+". ";
+    }
+    playerinfomsg.innerHTML = _playerinfomsg;
     sbutton.innerHTML = "Start Next Round";
   }
   return;
