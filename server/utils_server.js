@@ -43,7 +43,9 @@ export function handleClientState( GSnew, client_event_info ){
       console.log('PREVIOUS GAME STATE: ', GSnew.getPreviousState);
       console.log('NEXT GAME STATE: ', _state_id);
       console.log('ENTER EVENT FOR NEXT STATE: ', _next_state_event);
-      [GSnew, _state_id, _next_state_event] = StateArray[_state_id]["instate_events"][_next_state_event](GSnew, _next_state_event, _state_id, _client_id);
+      if( _next_state_event!=''){
+        [GSnew, _state_id, _next_state_event] = StateArray[_state_id]["instate_events"][_next_state_event](GSnew, _next_state_event, _state_id, _client_id);
+      }
       // Keep running the "enter" event and transition while we are in a 'game' state.
     } while( StateArray[GSnew.getCurrentState]["type"] == "game" && _next_state_event != '');
   }

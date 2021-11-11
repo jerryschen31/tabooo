@@ -93,7 +93,7 @@ function endRound( _current_player_id){
   if( _current_player_id == socket.id){
     console.log('in endRound(): sending timerUp client event to server');
     let client_event_info = {"client_event": 'timerUp',
-                              "client_state": 1,
+                              "client_state": GS.getCurrentState,
                               "client_id": socket.id};
     socket.emit('client-event', client_event_info);
   }
@@ -104,7 +104,7 @@ function endRound( _current_player_id){
 
 function startNextRound(){
   let client_event_info = {"client_event": 'startNextRound',
-                            "client_state": 4,
+                            "client_state": GS.getCurrentState,
                             "client_id": socket.id};
   socket.emit('client-event', client_event_info);
 }
@@ -125,7 +125,7 @@ function passOrBuzz(){
 
 function clientStartTimer( _current_player_id){
   TimerObj.startTimer().then(
-    function(value){ endRound( _current_player_id); }
+    function(value){ endRound( _current_player_id); sbutton.style.display = "inline"; }
 //    function(error){ console.log('TIMER ERROR'); }
   );
 }
@@ -147,17 +147,18 @@ function updateClientDOM( _GS){
   console.log('IN UPDATE CLIENT DOM.');
   console.log('CURRENT STATE: ', _GS.getCurrentState);
   console.log('PREVIOUS STATE: ', _GS.getPreviousState);
-  if( _GS.getCurrentState == 4 && _GS.getPreviousState == 3){
-    console.log('IN UPDATE CLIENT DOM. RESETING TIMER.')
-    // reset timer for new round
-    // TimerObj.resetTimer();
+  // if we are at the end of a round
+  if( _GS.getCurrentState == 4){
+    TimerObj.stopTimer(); // stop the timer.
   }
-  else if( (_GS.getCurrentState == 1 && _GS.getPreviousState == 4) || (_GS.getCurrentState == 1 && _GS.getPreviousState == 0)) {
-    console.log('IN UPDATE CLIENT DOM. STARTING TIMER.');
-    TimerObj.resetTimer();
+  // if we are starting a round
+  if( (_GS.getCurrentState == 1 && _GS.getPreviousState == 4) || (_GS.getCurrentState == 1 && _GS.getPreviousState == 0)) {
+    console.log('IN UPDATE CLIENT DOM. NEW ROUND STARTING TIMER.');
+    sbutton.style.display = "none"; // hide the start next round button
+    TimerObj.resetTimer(); // this should also stop the previous timer
     clientStartTimer( _GS.getCurrentPlayerId);
   }
-  // TEMPORARY
+  // if we are in an active game (i.e., not the init state)
   if( _GS.getCurrentState != 0){
     let _player_me = _GS.getPlayerById(socket.id);
     let _team_me = _GS.players[_player_me].team;

@@ -49,7 +49,11 @@ export class Timer {
     this.h = this.h_og;
     this.m = this.m_og;
     this.s = this.s_og;
-    this.timeup = false;
+    this.timeup = true;
+  }
+
+  stopTimer(){
+    this.timeup = true;
   }
 
   setTime( _h, _m, _s){
@@ -74,6 +78,10 @@ export class Timer {
     // this.updateTimer();
     this.gtimer.innerHTML = this.getTimeString;
 
+    // timer was reset - stop counting down
+    if( this.timeup == true){
+      return 'timeup';
+    }
     // 00:00:00 - countDown hits zero -> exit
     if( this.s<0 && this.m==0 && this.h==0 ){
       this.timeup = true;
@@ -102,12 +110,13 @@ export class Timer {
   // socket.emit('time up') to server.
   async startTimer(){
     console.log('in start timer!!!');
+    this.timeup = false;
     this.countDown();
     // just wait 1 minute (asynchronously) and then return
     let _status = await new Promise(function(resolve) {
       setTimeout( function(){resolve("OK");}, 15000); // this doesn't work inside setTimeout - hard-coded 5 min in ms
     });
-    console.log('exiting start timer!!!'); 
+    console.log('exiting start timer!!!');
     return _status;
   }
 
