@@ -7,7 +7,6 @@
 
 */
 import { GameState, StateArray, initGameState, replaceGameStateVars } from './shared/states.js';
-import { Timer } from './shared/Timer.js';
 
 var GS = initGameState();
 
@@ -28,8 +27,8 @@ let tabword3 = document.getElementById("tabword3");
 let tabword4 = document.getElementById("tabword4");
 let tabword5 = document.getElementById("tabword5");
 
-var TimerObj = new Timer(0,0,15,gtimer,socket);
-gtimer.innerHTML = TimerObj.getTimeString;
+var TimerObj = new easytimer.Timer({countdown: true, startValues: {seconds: 15}});
+// gtimer.innerHTML = TimerObj.getTimeString;
 
 ///////////////////////////////////////////////
 // Socket Event Functions
@@ -110,24 +109,31 @@ function startNextRound(){
 }
 
 function correctGuess(){
+  if( GS.getCurrentPlayerId == socket.id){
     let client_event_info = {"client_event": 'correctButtonClicked',
                              "client_state": GS.getCurrentState,
                              "client_id": socket.id};
     socket.emit('client-event', client_event_info);
+  }
 };
 
 function passOrBuzz(){
-  let client_event_info = {"client_event": 'passButtonClicked',
+  if( GS.getCurrentPlayerId == socket.id){
+    let client_event_info = {"client_event": 'passButtonClicked',
                            "client_state": GS.getCurrentState,
                            "client_id": socket.id};
-  socket.emit('client-event', client_event_info);
+    socket.emit('client-event', client_event_info);
+  }
 };
 
-function clientStartTimer( _current_player_id){
-  TimerObj.startTimer().then(
-    function(value){ endRound( _current_player_id); sbutton.style.display = "inline"; }
+function clientStartTimer(){
+  TimerObj.reset(); // this should also stop the previous timer
+  TimerObj.start({ startValues: {seconds: 15}, target: {seconds: 0}});
+  gtimer.innerHTML = TimerObj.getTimeValues().toString();
+  // TimerObj.startTimer().then(
+  //  function(value){ endRound( _current_player_id); sbutton.style.display = "inline"; }
 //    function(error){ console.log('TIMER ERROR'); }
-  );
+  // );
 }
 
 function hasGameStarted(){
@@ -139,6 +145,15 @@ function hasGameStarted(){
   }
 }
 
+TimerObj.addEventListener('secondsUpdated', function(e){
+  gtimer.innerHTML = TimerObj.getTimeValues().toString();
+});
+
+TimerObj.addEventListener('targetAchieved', function(e){
+  endRound( GS.getCurrentPlayerId);
+});
+
+
 ////////////////////////////////////
 // Client-side DOM updates
 ////////////////////////////////////
@@ -149,14 +164,15 @@ function updateClientDOM( _GS){
   console.log('PREVIOUS STATE: ', _GS.getPreviousState);
   // if we are at the end of a round
   if( _GS.getCurrentState == 4){
-    TimerObj.stopTimer(); // stop the timer.
+    TimerObj.stop(); // stop the timer.
+    gtimer.innerHTML = '00:00:00';
+    sbutton.style.display = "inline";
   }
   // if we are starting a round
   if( (_GS.getCurrentState == 1 && _GS.getPreviousState == 4) || (_GS.getCurrentState == 1 && _GS.getPreviousState == 0)) {
     console.log('IN UPDATE CLIENT DOM. NEW ROUND STARTING TIMER.');
     sbutton.style.display = "none"; // hide the start next round button
-    TimerObj.resetTimer(); // this should also stop the previous timer
-    clientStartTimer( _GS.getCurrentPlayerId);
+    clientStartTimer();
   }
   // if we are in an active game (i.e., not the init state)
   if( _GS.getCurrentState != 0){

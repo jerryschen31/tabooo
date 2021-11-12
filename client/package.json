@@ -2,6 +2,8 @@
   "name": "tabooo-client",
   "version": "0.0.1",
   "description": "web client for tabooo",
-  "type": "module",    
-  "dependencies": {}
+  "type": "module",
+  "dependencies": {
+    "easytimer.js": "^4.5.1"
+  }
 }
