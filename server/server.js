@@ -39,6 +39,8 @@ const io = new Server(server);
 var PA;       // player array
 var GS;       // GameState object
 
+const ROOM = 'tabooo';
+
 ///////////////////////////////////////////////
 // Express stuff
 ///////////////////////////////////////////////
@@ -63,21 +65,23 @@ function initializeGame(){
 // Socket Event Functions
 ///////////////////////////////////////////////
 
-/// Called when a user successfully connects
+/// Called when a user successfully connects (through a socket)
 // the line "socket = io()" on the client-side HTML/JS file auto-connects to this server
 // (which just sent the HTML/JS to the client)
 io.on('connection', (socket)=>{
     console.log('user connected: '+socket.id);
+    socket.join(ROOM);
 
     // Create a new player and add to player array
     // - but how to handle if client disconnects and reconnects? we don't want the player to pick up where he left off.
     let P = new Player(socket.id, '', '');
+
+    // emit a 'user-connected' event to all clients -> this will trigger event on client-side
+    io.to(ROOM).emit('user-connected', {'PA': PA.players, 'P': P});
     PA.add_player(P);
+
     // Pass current game state to player (esp useful if player is re-connecting)
     // socket.emit('update-state',GS);
-
-    // Tell all users that a new user connected.
-    io.emit('user-connected', P);
 
     ////////////////////////////////
     // EVENT FROM THIS CLIENT: start a new game
@@ -110,9 +114,10 @@ io.on('connection', (socket)=>{
     ////////////////////////////////
     // CLIENT EVENT: auto-called when this user disconnects
     ////////////////////////////////
-    socket.on('disconnect', (socket)=>{
-	     console.log('user disconnected');
+    socket.on('disconnect', ()=>{
+	     console.log('user disconnected: ', socket);
        PA.remove_playerbyid(socket.id);
+       io.to(ROOM).emit('user-disconnected', socket.id);
     });
 });
 

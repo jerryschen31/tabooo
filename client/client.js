@@ -10,6 +10,7 @@ import { GameState, StateArray, initGameState, replaceGameStateVars } from './sh
 
 var GS = initGameState(); // game state object
 var PA = [];              // player array object
+var PA_ids = [];        // associated IDs for player array
 
 var socket = io();
 let sbutton = document.getElementById('sbutton');
@@ -42,25 +43,26 @@ socket.on('disconnect', ()=>{
     console.log('User disconnected');
 });
 
-socket.on('user-connected', (P)=>{
-  // create new player box in player grid.
-  let psquare = document.createElement("div");
-  let psquare_name = document.createElement("div");
-  let psquare_score = document.createElement("div");
-  let _pid = P.pid;
-  let _pname = P.name;
-  let _pscore = P.score;
-  PA.push(P);
-  psquare.id = _pid;
-  psquare.className = "grid-item nonactive";
-  psquare_name.id = _pid+"_name";
-  psquare_name.innerHTML = _pname.substring(0,6);
-  psquare_score.id = _pid+"_score";
-  psquare_score.innerHTML = String(_pscore);
-  psquare.appendChild(psquare_name);
-  psquare.appendChild(psquare_score);
-  playergrid.appendChild(psquare);
-})
+socket.on('user-connected', (PA_object)=>{
+  let _PA = PA_object['PA'];  // current array of connected players
+  let _P = PA_object['P'];    // newly connected player
+  console.log('Existing PA from server: ', _PA);
+  console.log('New Player: ', _P);
+  console.log('Client PA: ', PA);
+  for( let i=0;i<_PA.length;i++){
+    // add any players that previously connected (if not already in player array for this client)
+    if( PA_ids.indexOf(_PA[i].pid) < 0){
+      console.log('Adding previous player: ', _PA[i]);
+      addPlayer(_PA[i]);
+    }
+  }
+  addPlayer(_P);  // finally add the new player
+});
+
+socket.on('user-disconnected', (_pid)=>{
+  // remove DOM elements associated with the disconnected player
+  removePlayer(_pid);
+});
 
 ///////////////////////////////////////////////
 // 'update-state' is sent by the server after it has handled an event.
@@ -170,6 +172,43 @@ function hasGameStarted(){
   }
   else{
     return true;
+  }
+}
+
+function addPlayer(P){
+  // create new player box in player grid.
+  let psquare = document.createElement("div");
+  let psquare_name = document.createElement("div");
+  let psquare_score = document.createElement("div");
+  let _pid = P.pid;
+  let _pname = P.name;
+  let _pscore = P.score;
+  PA.push(P);
+  PA_ids.push(_pid);
+  psquare.id = _pid;
+  psquare.className = "grid-item nonactive";
+  psquare_name.id = _pid+"_name";
+  psquare_name.innerHTML = _pname.substring(0,6);
+  psquare_score.id = _pid+"_score";
+  psquare_score.innerHTML = String(_pscore);
+  psquare.appendChild(psquare_name);
+  psquare.appendChild(psquare_score);
+  playergrid.appendChild(psquare);
+}
+
+function removePlayer(_pid){
+  console.log('PID DISCONNECTED: ', _pid);
+  // remove player by their unique player ID
+  let psquare = document.getElementById(_pid);
+  console.log('REMOVING ELEMENT', psquare);
+  console.log('DOM', document);
+  psquare.remove();
+  // remove player from player array
+  for( let i=0;i<PA.length;i++){
+    if( PA[i].pid == _pid){
+      PA.splice(i,1);
+      PA_ids.splice(i,1);
+    }
   }
 }
 
