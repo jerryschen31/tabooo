@@ -30,11 +30,6 @@
         height: 100%;
         object-fit: cover;
       }
-      #player-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill,18vw);
-        grid-auto-rows: 5vh;
-      }
       #image-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill,15vw);
@@ -47,6 +42,31 @@
         grid-auto-rows: 25vh;
         grid-gap: 5px;
       }
+      .grid-container {
+        display: inline-grid;
+        grid-gap: 5px;
+        grid-auto-flow: column;
+        height: 75px;
+        padding: 5px;
+        border: 2px solid #000000;
+      }
+      .grid-item {
+          border-radius: 10px;
+          padding: 10px;
+          height: 50px;
+          width: 100px;
+          text-align: center;
+      }
+      .nonactive {
+          border: 2px solid #000000;
+      }
+      .activeteam {
+          border: 2px solid #FF0000;
+      }
+      .activeplayer {
+          border: 4px solid #FF0000;
+          background-color: #EFFD5F;
+      }
     </style>
   </head>
   <body>
@@ -58,11 +78,12 @@
         <h3><span id="infomsg">Host - Click Start Game</span></h3>
 	       <!-- top bar for showing messages to players -->
       </div>
-
       <div id="video-grid">
         <!-- create video grid - 4 squares -->
       </div>
-
+      <div id="player-grid" class="grid-container">
+        <!-- grid for showing player name, score, other info -->
+      </div>
       <div id="gamearea">
         <!-- central game board. For tabooo, show buttons, timer and card here -->
 	<div id="timer_div"><h3><span id="timer"></span></h3></div>

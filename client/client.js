@@ -8,7 +8,8 @@
 */
 import { GameState, StateArray, initGameState, replaceGameStateVars } from './shared/states.js';
 
-var GS = initGameState();
+var GS = initGameState(); // game state object
+var PA = [];              // player array object
 
 var socket = io();
 let sbutton = document.getElementById('sbutton');
@@ -17,7 +18,7 @@ let wbutton = document.getElementById('wbutton');
 let gtimer = document.getElementById('timer');
 let infomsg = document.getElementById('infomsg');
 let playerinfomsg = document.getElementById('playerinfomsg');
-
+let playergrid = document.getElementById('player-grid');
 let word2guess_header = document.getElementById("word2guess_header");
 let word2guess = document.getElementById("word2guess");
 let tabheader = document.getElementById("tabheader");
@@ -40,6 +41,26 @@ socket.on('connect', ()=>{
 socket.on('disconnect', ()=>{
     console.log('User disconnected');
 });
+
+socket.on('user-connected', (P)=>{
+  // create new player box in player grid.
+  let psquare = document.createElement("div");
+  let psquare_name = document.createElement("div");
+  let psquare_score = document.createElement("div");
+  let _pid = P.pid;
+  let _pname = P.name;
+  let _pscore = P.score;
+  PA.push(P);
+  psquare.id = _pid;
+  psquare.className = "grid-item nonactive";
+  psquare_name.id = _pid+"_name";
+  psquare_name.innerHTML = _pname.substring(0,6);
+  psquare_score.id = _pid+"_score";
+  psquare_score.innerHTML = String(_pscore);
+  psquare.appendChild(psquare_name);
+  psquare.appendChild(psquare_score);
+  playergrid.appendChild(psquare);
+})
 
 ///////////////////////////////////////////////
 // 'update-state' is sent by the server after it has handled an event.
@@ -80,6 +101,17 @@ wbutton.addEventListener('click', function(e){
     passOrBuzz();
 });
 
+TimerObj.addEventListener('secondsUpdated', function(e){
+  gtimer.innerHTML = TimerObj.getTimeValues().toString();
+});
+
+TimerObj.addEventListener('targetAchieved', function(e){
+  endRound( GS.getCurrentPlayerId);
+});
+
+///////////////////////////////////////////////
+// Event Sub-Functions
+///////////////////////////////////////////////
 
 function startGame(){
   socket.emit('start-game');
@@ -130,10 +162,6 @@ function clientStartTimer(){
   TimerObj.reset(); // this should also stop the previous timer
   TimerObj.start({ startValues: {seconds: 15}, target: {seconds: 0}});
   gtimer.innerHTML = TimerObj.getTimeValues().toString();
-  // TimerObj.startTimer().then(
-  //  function(value){ endRound( _current_player_id); sbutton.style.display = "inline"; }
-//    function(error){ console.log('TIMER ERROR'); }
-  // );
 }
 
 function hasGameStarted(){
@@ -144,15 +172,6 @@ function hasGameStarted(){
     return true;
   }
 }
-
-TimerObj.addEventListener('secondsUpdated', function(e){
-  gtimer.innerHTML = TimerObj.getTimeValues().toString();
-});
-
-TimerObj.addEventListener('targetAchieved', function(e){
-  endRound( GS.getCurrentPlayerId);
-});
-
 
 ////////////////////////////////////
 // Client-side DOM updates
@@ -170,7 +189,6 @@ function updateClientDOM( _GS){
   }
   // if we are starting a round
   if( (_GS.getCurrentState == 1 && _GS.getPreviousState == 4) || (_GS.getCurrentState == 1 && _GS.getPreviousState == 0)) {
-    console.log('IN UPDATE CLIENT DOM. NEW ROUND STARTING TIMER.');
     sbutton.style.display = "none"; // hide the start next round button
     clientStartTimer();
   }
@@ -182,11 +200,18 @@ function updateClientDOM( _GS){
     let _teams = Object.keys(_team_scores);
     let _playerinfomsg = "You are player "+String(_player_me)+" on Team "+String(_team_me)+".";
     console.log('TEAM SCORES: ', _team_scores);
+    for( let i=0; i<PA.length; i++){
+      console.log('HERE? ', String(_player_me), ' vs ', PA[i].pid);
+      if( socket.id == PA[i].pid){
+        document.getElementById(PA[i].pid + "_score").innerHTML = String(_team_scores[_teams[i]]);
+      }
+    }
     for( let i=0; i<_teams.length; i++){
       _playerinfomsg += " Team "+String(_teams[i])+" - Score: "+String(_team_scores[_teams[i]])+". ";
     }
     playerinfomsg.innerHTML = _playerinfomsg;
     sbutton.innerHTML = "Start Next Round";
   }
+
   return;
 }

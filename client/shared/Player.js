@@ -21,7 +21,7 @@
 export class Player{
   // PID is required and cannot be changed once initialized.
   constructor( _pid, _name = '', _team = None, _score = 0 ){
-    this.name = _name;
+    this.name = _pid; // _name; - temporary
     this.team = _team; // team index
     this.pid = _pid;
     this.score = _score;

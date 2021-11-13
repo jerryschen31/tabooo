@@ -76,6 +76,9 @@ io.on('connection', (socket)=>{
     // Pass current game state to player (esp useful if player is re-connecting)
     // socket.emit('update-state',GS);
 
+    // Tell all users that a new user connected.
+    io.emit('user-connected', P);
+
     ////////////////////////////////
     // EVENT FROM THIS CLIENT: start a new game
     ////////////////////////////////
@@ -87,13 +90,7 @@ io.on('connection', (socket)=>{
       console.log(GS.getTeams);
       GS = handleClientState(GS, {"client_event": 'startGame', "client_state": 0});
       io.emit('update-state', GS);
-      // io.emit('start-timer');
     });
-
-    // start new round - have all clients start their timers
-    //socket.on('start-round', ()=>{
-    //  io.emit('start-timer');
-    //});
 
     ////////////////////////////////
     // EVENT FROM THIS CLIENT: handle any game event
