@@ -49,15 +49,10 @@ socket.on('user-connected', (PA_object)=>{
   console.log('Existing PA from server: ', _PA);
   console.log('New Player: ', _P);
   console.log('Client PA: ', PA);
-  for( let i=0;i<_PA.length;i++){
-    // add any players that previously connected (if not already in player array for this client)
-    if( PA_ids.indexOf(_PA[i].pid) < 0){
-      console.log('Adding previous player: ', _PA[i]);
-      addPlayer(_PA[i]);
-    }
-  }
+  addExistingPlayers(_PA);
   addPlayer(_P);  // finally add the new player
 });
+
 
 socket.on('user-disconnected', (_pid)=>{
   // remove DOM elements associated with the disconnected player
@@ -176,12 +171,14 @@ function hasGameStarted(){
 }
 
 function addPlayer(P){
-  // create new player box in player grid.
+  // create new player box in player grid. global Player Array is updated.
   let psquare = document.createElement("div");
   let psquare_name = document.createElement("div");
+  let psquare_team = document.createElement("div");
   let psquare_score = document.createElement("div");
   let _pid = P.pid;
   let _pname = P.name;
+  let _pteam = P.team;
   let _pscore = P.score;
   PA.push(P);
   PA_ids.push(_pid);
@@ -189,9 +186,12 @@ function addPlayer(P){
   psquare.className = "grid-item nonactive";
   psquare_name.id = _pid+"_name";
   psquare_name.innerHTML = _pname.substring(0,6);
+  psquare_team.id = _pid+"_team";
+  psquare_team.innerHTML = "Team "+String(_pteam);
   psquare_score.id = _pid+"_score";
-  psquare_score.innerHTML = String(_pscore);
+  psquare_score.innerHTML = "Score: "+String(_pscore);
   psquare.appendChild(psquare_name);
+  psquare.appendChild(psquare_team);
   psquare.appendChild(psquare_score);
   playergrid.appendChild(psquare);
 }
@@ -208,6 +208,17 @@ function removePlayer(_pid){
     if( PA[i].pid == _pid){
       PA.splice(i,1);
       PA_ids.splice(i,1);
+    }
+  }
+}
+
+function addExistingPlayers( _PA){
+  // add any players that previously connected (if not already in player array for this client)
+  // input _PA: existing player array, from server
+  for( let i=0;i<_PA.length;i++){
+    if( PA_ids.indexOf(_PA[i].pid) < 0){
+      console.log('Adding previous player: ', _PA[i]);
+      addPlayer(_PA[i]);
     }
   }
 }
@@ -231,26 +242,56 @@ function updateClientDOM( _GS){
     sbutton.style.display = "none"; // hide the start next round button
     clientStartTimer();
   }
+  // if we are just starting the game, we need to update team numbers and scores in the DOM.
+  if( _GS.getCurrentState == 1 && _GS.getPreviousState == 0){
+    updatePlayerDOM( _GS);
+  }
   // if we are in an active game (i.e., not the init state)
   if( _GS.getCurrentState != 0){
+    // my current player number and team number
     let _player_me = _GS.getPlayerById(socket.id);
     let _team_me = _GS.players[_player_me].team;
+    // all teams and team scores
     let _team_scores = _GS.getScoreEachTeam();
     let _teams = Object.keys(_team_scores);
-    let _playerinfomsg = "You are player "+String(_player_me)+" on Team "+String(_team_me)+".";
+    let _playerinfomsg = " You are Player "+String(socket.id).substring(0,6)+" on Team "+String(_teams[_team_me])+" - Score: "+String(_team_scores[_teams[_team_me]])+".";
     console.log('TEAM SCORES: ', _team_scores);
-    for( let i=0; i<PA.length; i++){
-      console.log('HERE? ', String(_player_me), ' vs ', PA[i].pid);
-      if( socket.id == PA[i].pid){
-        document.getElementById(PA[i].pid + "_score").innerHTML = String(_team_scores[_teams[i]]);
-      }
-    }
-    for( let i=0; i<_teams.length; i++){
-      _playerinfomsg += " Team "+String(_teams[i])+" - Score: "+String(_team_scores[_teams[i]])+". ";
-    }
+    updatePlayerDOM( _GS);
     playerinfomsg.innerHTML = _playerinfomsg;
     sbutton.innerHTML = "Start Next Round";
   }
 
   return;
+}
+
+
+function updatePlayerDOM( _GS){
+  // given array of Player objects, update all player team and score info on the DOM.
+  for( let i=0;i<PA.length;i++){
+    let _pid = PA_ids[i]
+    let pnum = _GS.getPlayerById(_pid);
+    let _pteam = _GS.players[pnum].team;
+    let _pscore = _GS.players[pnum].score;
+    let psquare = document.getElementById(_pid);
+    let psquare_team = document.getElementById(_pid+"_team");
+    let psquare_score = document.getElementById(_pid+"_score");
+
+    psquare_team.innerHTML = "Team "+String(_pteam);
+    psquare_score.innerHTML = "Score: "+String(_pscore);
+
+    console.log('PTEAM: ', _pteam);
+    console.log('CURRENT TEAM: ', _GS.getCurrentTeam);
+    console.log('PNUM: ', pnum);
+    console.log('CURRENT PLAYER: ', _GS.getCurrentPlayer);
+
+    if( _pteam == _GS.getCurrentTeam && pnum == _GS.getCurrentPlayer){
+      psquare.className = "grid-item activeteam activeplayer";
+    }
+    else if( _pteam == _GS.getCurrentTeam && pnum != _GS.getCurrentPlayer){
+      psquare.className = "grid-item activeteam";
+    }
+    else{
+      psquare.className = "grid-item nonactive";
+    }
+  }
 }

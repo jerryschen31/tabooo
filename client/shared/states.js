@@ -568,10 +568,6 @@ function startGame( _GS, _se = 'startGame', _sid = 0, _clientid = '' ){
   return [_GS, _new_sid, _next_event];
 }
 
-function finalScoring( _GS, _se, _sid, _clientid = '' ){
-  return [_GS, 9999, ''];
-}
-
 function showNextCard( _GS, _se, _sid, _clientid = '' ){
   return [_GS, 1, ''];
 }
@@ -623,7 +619,8 @@ function correctButtonClicked( _GS, _se, _sid, _clientid = '' ){
   for( let i=0;i<_current_team_players.length;i++){
     _new_score = _GS.players[_current_team_players[i]].incrementScore();
   }
-  _GS.setStateStatus = "Correct! Team " + String(_current_team) + " score: " + String(_new_score) + ".";
+  // _GS.setStateStatus = "Correct! Team " + String(_current_team) + " score: " + String(_new_score) + ".";
+  _GS.setStateStatus = "Correct! Team " + String(_current_team) + " scored a point.";
   return [_GS, _new_sid, StateArray[_new_sid]["enterstate_event"]];
 }
 
@@ -640,7 +637,8 @@ function passButtonClicked( _GS, _se, _sid, _clientid = '' ){
   for( let i=0;i<_current_team_players.length;i++){
     _new_score = _GS.players[_current_team_players[i]].decrementScore();
   }
-  _GS.setStateStatus = "Pass/Buzz! Team " + String(_current_team) + " score: " + String(_new_score) + ".";
+  // _GS.setStateStatus = "Pass/Buzz! Team " + String(_current_team) + " score: " + String(_new_score) + ".";
+  _GS.setStateStatus = "Pass/Buzz! Team " + String(_current_team) + " lost 1 point.";
   return [_GS, _new_sid,  _next_event];
 }
 
@@ -670,7 +668,7 @@ function changeActiveTeam( _GS, _se, _sid, _clientid = ''){
   return [_GS, _new_sid, _next_event];
 }
 
-function endGame( _GS, _se, _sid, _clientid = ''){
+function finalScoring( _GS, _se, _sid, _clientid = ''){
   console.log('GAME OVER!');
   let _current_team_players = _GS.getPlayersWithinCurrentTeam();
   let _current_team = _GS.getCurrentTeam;
@@ -679,5 +677,5 @@ function endGame( _GS, _se, _sid, _clientid = ''){
   let _next_team = _GS.getNextCurrentTeam; // assumes just 2 teams
   let _next_team_score = _GS.players[_next_team_players[0]].score;
   _GS.setStateStatus = "GAME OVER! FINAL SCORES - Team " + String(_current_team) + " score: " + String(_current_team_score) + ". Team "+String(_next_team)+" score: "+String(_next_team_score);
-  return [_GS, -1, ''];
+  return [_GS, 5, ''];
 }
