@@ -4,6 +4,7 @@
   "description": "web client for tabooo",
   "type": "module",
   "dependencies": {
-    "easytimer.js": "^4.5.1"
+    "easytimer.js": "^4.5.1",
+    "jsonwebtoken": "^8.5.1"
   }
 }

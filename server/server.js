@@ -18,13 +18,16 @@
 ///////////////////////////////////////////////
 import { handleClientState, numConnectedClients } from './utils_server.js';
 import { Player, PlayerArray } from './public/shared/Player.js';
-import { GameState, StateArray, initGameState, setGameState, getGameState } from './public/shared/states.js';
+import { GameState, StateArray, initGameState, setGameState, getGameState, setWordArray, getWordCard } from './public/shared/states.js';
 
 import express from 'express';
 import { fileURLToPath } from 'url';
 import path, { dirname } from 'path';
 import http from 'http';
 import { Server } from "socket.io";
+
+import fs from 'fs';
+import csv from 'fast-csv';
 
 ///////////////////////////////////////////////
 // Global variable declarations
@@ -38,8 +41,17 @@ const io = new Server(server);
 
 var PA;       // player array
 var GS;       // GameState object
+var WORDS = [];    // array of words
 
 const ROOM = 'tabooo';
+
+// get all words from CSV: guess_word, taboo_word1,... taboo_word5
+fs.createReadStream(path.resolve(__dirname, 'words.csv'))
+  .pipe(csv.parse({ headers: true }))
+  .on('error', error => console.error(error))
+  .on('data', row => WORDS.push(row))
+  .on('end', rowCount => {console.log(WORDS); console.log(`Parsed ${rowCount} rows`);});
+
 
 ///////////////////////////////////////////////
 // Express stuff
@@ -58,6 +70,7 @@ app.get('/', (req, res)=>{
 function initializeGame(){
   // initialize variables here
   PA = new PlayerArray();
+  setWordArray( WORDS );
 }
 
 
@@ -88,7 +101,7 @@ io.on('connection', (socket)=>{
     ////////////////////////////////
     socket.on('start-game', ()=>{
       // initialize the game
-      GS = initGameState(['A','B'], PA.get_players);
+      GS = initGameState(['A','B'], PA.get_players, WORDS.length);
       GS.assignTeams();
       console.log(GS.getPlayers);
       console.log(GS.getTeams);

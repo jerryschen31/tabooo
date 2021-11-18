@@ -240,7 +240,16 @@ function updateClientDOM( _GS){
   // if we are starting a round
   if( (_GS.getCurrentState == 1 && _GS.getPreviousState == 4) || (_GS.getCurrentState == 1 && _GS.getPreviousState == 0)) {
     sbutton.style.display = "none"; // hide the start next round button
-    clientStartTimer();
+
+    let wordcard = _GS.getWord; // show new word card
+    word2guess.innerHTML = wordcard["guess_word"];
+    tabword1.innerHTML = wordcard["taboo_word1"];
+    tabword2.innerHTML = wordcard["taboo_word2"];
+    tabword3.innerHTML = wordcard["taboo_word3"];
+    tabword4.innerHTML = wordcard["taboo_word4"];
+    tabword5.innerHTML = wordcard["taboo_word5"];
+
+    clientStartTimer(); // start the timer for the round
   }
   // if we are just starting the game, we need to update team numbers and scores in the DOM.
   if( _GS.getCurrentState == 1 && _GS.getPreviousState == 0){

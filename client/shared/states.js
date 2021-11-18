@@ -136,11 +136,27 @@
   never get out-of-sync. For now (prototype), perhaps the entire state variables object can be
   passed each time.
 */
+
+/// Word Array with setter
+var WA = [];
+
+export function setWordArray( _words ){
+  WA = _words;
+}
+
+export function getWordCard( _windex ){
+  console.log(WA);
+  console.log('in getWordCard()');
+  console.log('word index', _windex);
+  return WA[_windex];
+}
+
+
 /// GameState object with init, getter and setter
 var GS;
 
-export function initGameState( _teams = [], _players = [] ){
-  GS = new GameState( _teams, _players );
+export function initGameState( _teams = [], _players = [], _numwords = 0 ){
+  GS = new GameState( _teams, _players, _numwords );
   return GS;
 }
 
@@ -163,7 +179,7 @@ export function replaceGameStateVars( _GS, newVars ){
 
 /// GameState class - holds PlayerArray, player / team states, and other game / state variables
 export class GameState{
-  constructor( _teams = [], _players = [] ){
+  constructor( _teams = [], _players = [], _numwords = 0 ){
     this.teams = _teams;      // array of team names - if NOT a team game, then there's only one team
     this.players = _players;  // array of Player objects
     this.players_each_team = {};  // e.g., {0: [p1,p2,p3], 1: [p4,p5,p6]} where 0 and 1 are team indexes
@@ -171,7 +187,8 @@ export class GameState{
       "num_rounds": 4,       // FUTURE can be read in as input
       "starting_team": 0,    // index of the team that starts the game (if NOT a team game, there's only 1 team)
       "starting_current_player": 0,  // index of the player that starts the game for each team
-      "starting_active_player": 0    // index of the player that starts the game for each team
+      "starting_active_player": 0,    // index of the player that starts the game for each team
+      "num_words": _numwords // the number of word cards to choose from
     },
     this.state_vars = {
       "previous_state": 0,
@@ -187,6 +204,9 @@ export class GameState{
       "active_player": 0,
       "current_player": 0,
       "current_round": 1,
+      "word": {},  // contains guess word and 5 tabooo words
+      "word_index": 0, // keep track of word indexes.
+      "used_words": [] // indexes of used words from word array
     };
   }
 
@@ -256,6 +276,18 @@ export class GameState{
   get getNumRounds(){
     return this.game_vars["num_rounds"];
   }
+  get getWord(){
+    return this.state_vars["word"];
+  }
+  get getWordIndex(){
+    return this.state_vars["word_index"];
+  }
+  get getUsedWords(){
+    return this.state_vars["used_words"];
+  }
+  get getNumWords(){
+    return this.game_vars["num_words"];
+  }
 
   set setCurrentEvent( _e ){
     this.state_vars["current_event"] = _e;
@@ -310,6 +342,15 @@ export class GameState{
   set setNumRounds( _s ){
     this.game_vars["num_rounds"] = _s;
   }
+  set setWord( _w ){
+    this.state_vars["word"] = _w;
+  }
+  set setWordIndex( _wi ){
+    this.state_vars["word_index"] = _wi;
+  }
+  set setUsedWords( _w ){
+    this.state_vars["used_words"] = _w;
+  }
 
   // extra basic getters and setters
   get getNextCurrentPlayer(){
@@ -331,6 +372,19 @@ export class GameState{
   }
   setActiveTeamToCurrent(){
     this.state_vars["active_team"] = this.state_vars["current_team"];
+  }
+
+  // set new word (avoid used word indexes)
+  setRandomWord(){
+    let randomIndex = -1;
+    // if we're close to reading through the whole deck, then reset
+    if( this.getUsedWords.length>=this.getNumWords-1){
+      this.setUsedWords = [];
+    }
+    do{
+      randomIndex = Math.floor(Math.random()*this.getNumWords);
+    } while( this.getUsedWords.indexOf(randomIndex) >= 0);
+    this.setWordIndex = randomIndex;
   }
 
   // get scores for each team (just get score of 1st player in each team), returned as dict {0: 2, 1: 3,...}
@@ -569,6 +623,8 @@ function startGame( _GS, _se = 'startGame', _sid = 0, _clientid = '' ){
 }
 
 function showNextCard( _GS, _se, _sid, _clientid = '' ){
+  _GS.setRandomWord();
+  _GS.setWord = getWordCard(_GS.getWordIndex);
   return [_GS, 1, ''];
 }
 
