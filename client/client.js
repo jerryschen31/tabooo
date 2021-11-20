@@ -15,6 +15,7 @@ var resetGame = true;     // toggle if we start a new game
 var isPaused = false;     // is the game paused or not
 var pname = '';           // your name
 var _player_name_updated = false;
+var alreadyPrompted = false;
 
 var socket = io();
 let sbutton = document.getElementById('sbutton');
@@ -45,12 +46,12 @@ let QRC = new QRCode(qrcode, "http://35.160.188.146:3000");
 // Socket Event Functions
 ///////////////////////////////////////////////
 socket.on('connect', ()=>{
-    console.log('You connected to server as: '+socket.id)
-    pname = window.prompt("What's your Name?",socket.id);
+    console.log('You connected to server as: '+socket.id);
 });
 
 socket.on('disconnect', ()=>{
     console.log('User disconnected');
+    alreadyPrompted = false;
 });
 
 socket.on('user-connected', (PA_object)=>{
@@ -59,6 +60,10 @@ socket.on('user-connected', (PA_object)=>{
   console.log('Existing PA from server: ', _PA);
   console.log('New Player: ', _P);
   console.log('Client PA: ', PA);
+  if( alreadyPrompted == false){
+    pname = window.prompt("What's your Name?",socket.id);
+    alreadyPrompted = true;
+  }
   addExistingPlayers(_PA);
   addPlayer(_P);  // finally add the new player
 });
