@@ -116,6 +116,13 @@ io.on('connection', (socket)=>{
     socket.on('resume-game', ()=>{
       io.emit('resume-game-update');
     });
+
+    socket.on('update-player-name', (pobj)=>{
+      let pnum = GS.getPlayerById(pobj["pid"]);
+      GS.players[pnum].name = pobj["pname"];
+      io.emit('update-player-dom', GS);
+    }); // {"pid": socket.id, "pname": pname});
+
     ////////////////////////////////
     // EVENT FROM THIS CLIENT: handle any game event
     ////////////////////////////////

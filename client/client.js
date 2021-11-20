@@ -13,6 +13,8 @@ var PA = [];              // player array object
 var PA_ids = [];          // associated IDs for player array
 var resetGame = true;     // toggle if we start a new game
 var isPaused = false;     // is the game paused or not
+var pname = '';           // your name
+var _player_name_updated = false;
 
 var socket = io();
 let sbutton = document.getElementById('sbutton');
@@ -37,13 +39,14 @@ let guesscardmsg = document.getElementById("guesscardmsg");
 
 var TimerObj = new easytimer.Timer({countdown: true, startValues: {seconds: 15}});
 
-let QRC = new QRCode(qrcode, "http://www.apple.com");
+let QRC = new QRCode(qrcode, "http://35.160.188.146:3000");
 
 ///////////////////////////////////////////////
 // Socket Event Functions
 ///////////////////////////////////////////////
 socket.on('connect', ()=>{
     console.log('You connected to server as: '+socket.id)
+    pname = window.prompt("What's your Name?",socket.id);
 });
 
 socket.on('disconnect', ()=>{
@@ -91,6 +94,12 @@ socket.on('update-state', stateobj=>{
     // update info message
     infomsg.innerHTML = GS.getStateStatus;
     console.log('state object sent from server to client: ', GS);
+});
+
+// TEMP FIX TO UPDATE PLAYER NAMES - REMOVE LATER
+socket.on('update-player-dom', stateobj=> {
+  GS = replaceGameStateVars(GS, stateobj);
+  updateClientDOM(GS);
 });
 
 ///////////////////////////////////////////////
@@ -220,7 +229,7 @@ function addPlayer(P){
   psquare.id = _pid;
   psquare.className = "grid-item nonactive";
   psquare_name.id = _pid+"_name";
-  psquare_name.innerHTML = _pname.substring(0,6);
+  psquare_name.innerHTML = _pname.substring(0,12); // .substring(0,6);
   psquare_team.id = _pid+"_team";
   psquare_team.innerHTML = "Team "+String(_pteam);
   psquare_score.id = _pid+"_score";
@@ -284,7 +293,10 @@ function updateClientDOM( _GS){
   if( _GS.getCurrentState == 1 && _GS.getPreviousState == 0){
     resetGame = false; // TEMPORARY need better way to handle reset game
     qrcode.style.display = "none";
-    updatePlayerDOM( _GS);
+    if( _player_name_updated == false){
+      socket.emit('update-player-name', {"pid": socket.id, "pname": pname});
+      _player_name_updated = true;
+    }
   }
   // if we are in an active game (i.e., not the init state)
   if( _GS.getCurrentState != 0){
@@ -294,12 +306,17 @@ function updateClientDOM( _GS){
     let _active_team = _GS.getActiveTeam;
     let _active_player = _GS.getActivePlayer;
 
+    // set me-player name - SHOULD DEF DO THIS ELSEWHERE
+    // _GS.players[_player_me].name = pname;
+    // console.log('PLAYER ME: ', _GS.players[_player_me].name);
+    // let _player_me_name = pname == '' ? String(socket.id).substring(0,6) : pname
+
     // all teams and team scores
     let _team_scores = _GS.getScoreEachTeam();
     let _teams = Object.keys(_team_scores);
-    let _playerinfomsg = " You are Player "+String(socket.id).substring(0,6)+" on Team "+String(_teams[_team_me])+"." // " - Score: "+String(_team_scores[_teams[_team_me]])+".";
+    let _playerinfomsg = " You are on Team "+String(_teams[_team_me])+"." // " - Score: "+String(_team_scores[_teams[_team_me]])+".";
     console.log('TEAM SCORES: ', _team_scores);
-    updatePlayerDOM( _GS);
+    // updatePlayerDOM( _GS);
 
     // if active team, then only show word card to the active player giving clues.
     if( _team_me == _active_team && _active_player != _player_me){
@@ -339,6 +356,7 @@ function updateClientDOM( _GS){
     qrcode.style.display = "inline";
   }
 
+  updatePlayerDOM( _GS);
   return;
 }
 
@@ -350,12 +368,15 @@ function updatePlayerDOM( _GS){
     let pnum = _GS.getPlayerById(_pid);
     let _pteam = _GS.players[pnum].team;
     let _pscore = _GS.players[pnum].score;
+    let _pname = _GS.players[pnum].name;
     let psquare = document.getElementById(_pid);
     let psquare_team = document.getElementById(_pid+"_team");
     let psquare_score = document.getElementById(_pid+"_score");
+    let psquare_name = document.getElementById(_pid+"_name");
 
     psquare_team.innerHTML = "Team "+String(_pteam);
     psquare_score.innerHTML = "Score: "+String(_pscore);
+    psquare_name.innerHTML = String(_pname.substring(0,12));
 
     console.log('PTEAM: ', _pteam);
     console.log('CURRENT TEAM: ', _GS.getCurrentTeam);
