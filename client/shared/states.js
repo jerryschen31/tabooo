@@ -208,6 +208,11 @@ export class GameState{
       "word_index": 0, // keep track of word indexes.
       "used_words": [] // indexes of used words from word array
     };
+
+    // reset all player scores
+    for( let i=0; i<_players.length;i++){
+      this.players[i].score = 0;
+    }
   }
 
   /// default getters and setters
@@ -385,6 +390,7 @@ export class GameState{
       randomIndex = Math.floor(Math.random()*this.getNumWords);
     } while( this.getUsedWords.indexOf(randomIndex) >= 0);
     this.setWordIndex = randomIndex;
+    console.log('IN SETRANDOMWORD(): NEW WORD INDEX: ', randomIndex);
   }
 
   // get scores for each team (just get score of 1st player in each team), returned as dict {0: 2, 1: 3,...}
@@ -677,6 +683,7 @@ function correctButtonClicked( _GS, _se, _sid, _clientid = '' ){
   }
   // _GS.setStateStatus = "Correct! Team " + String(_current_team) + " score: " + String(_new_score) + ".";
   _GS.setStateStatus = "Correct! Team " + String(_current_team) + " scored a point.";
+
   return [_GS, _new_sid, StateArray[_new_sid]["enterstate_event"]];
 }
 
@@ -693,8 +700,8 @@ function passButtonClicked( _GS, _se, _sid, _clientid = '' ){
   for( let i=0;i<_current_team_players.length;i++){
     _new_score = _GS.players[_current_team_players[i]].decrementScore();
   }
-  // _GS.setStateStatus = "Pass/Buzz! Team " + String(_current_team) + " score: " + String(_new_score) + ".";
   _GS.setStateStatus = "Pass/Buzz! Team " + String(_current_team) + " lost 1 point.";
+
   return [_GS, _new_sid,  _next_event];
 }
 

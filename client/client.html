@@ -71,6 +71,7 @@
   </head>
   <body>
     <div id="app">
+      <div id="qrcode"><h3>Scan QR Code to join game!</h3></div>
       <div id="playerinfobar">
         <h3><span id="playerinfomsg"></span></h3>
       </div>
@@ -89,6 +90,7 @@
 	<div id="timer_div"><h3><span id="timer"></span></h3></div>
 	<div id="buttons">
     <button id="sbutton">Start Game</button>
+    <button id="pbutton">Pause Game</button>
 	  <button id="cbutton">Team Guessed Correct!</button>
 	  <button id="wbutton">Pass / Got Buzzed!</button>
 	</div>
@@ -103,6 +105,9 @@
 	    <li id="tabword5">Nose</li>
 	  </ul>
 	</div>
+  <div id="guessword">
+    <h2><span id="guesscardmsg">Your teammate is giving clues. Guess the word!</span></h2>
+  </div>
       </div>
 
       <!-- bottom contains controls for video/audio, settings,... -->
@@ -114,6 +119,7 @@
   <!-- JS code for audio chat and socket.io stuff -->
   <script src="./node_modules/easytimer.js/dist/easytimer.min.js"></script>
   <script src="https://sdk.videosdk.live/js-sdk/0.0.15/videosdk.js"></script>
+  <script src="./qrcode.min.js"></script>
   <script type="module" src="./client.js"></script>
   <!-- <script src="./audiochat.js"></script> -->
 </html>

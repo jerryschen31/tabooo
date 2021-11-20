@@ -10,16 +10,20 @@ import { GameState, StateArray, initGameState, replaceGameStateVars } from './sh
 
 var GS = initGameState(); // game state object
 var PA = [];              // player array object
-var PA_ids = [];        // associated IDs for player array
+var PA_ids = [];          // associated IDs for player array
+var resetGame = true;     // toggle if we start a new game
+var isPaused = false;     // is the game paused or not
 
 var socket = io();
 let sbutton = document.getElementById('sbutton');
 let cbutton = document.getElementById('cbutton');
 let wbutton = document.getElementById('wbutton');
+let pbutton = document.getElementById('pbutton');
 let gtimer = document.getElementById('timer');
 let infomsg = document.getElementById('infomsg');
 let playerinfomsg = document.getElementById('playerinfomsg');
 let playergrid = document.getElementById('player-grid');
+let worcard = document.getElementById("wordcard");
 let word2guess_header = document.getElementById("word2guess_header");
 let word2guess = document.getElementById("word2guess");
 let tabheader = document.getElementById("tabheader");
@@ -28,9 +32,12 @@ let tabword2 = document.getElementById("tabword2");
 let tabword3 = document.getElementById("tabword3");
 let tabword4 = document.getElementById("tabword4");
 let tabword5 = document.getElementById("tabword5");
+let qrcode = document.getElementById("qrcode");
+let guesscardmsg = document.getElementById("guesscardmsg");
 
 var TimerObj = new easytimer.Timer({countdown: true, startValues: {seconds: 15}});
-// gtimer.innerHTML = TimerObj.getTimeString;
+
+let QRC = new QRCode(qrcode, "http://www.apple.com");
 
 ///////////////////////////////////////////////
 // Socket Event Functions
@@ -57,6 +64,18 @@ socket.on('user-connected', (PA_object)=>{
 socket.on('user-disconnected', (_pid)=>{
   // remove DOM elements associated with the disconnected player
   removePlayer(_pid);
+});
+
+socket.on('pause-game-update', ()=>{
+  TimerObj.pause();
+  isPaused = true;
+  pbutton.innerHTML = "Resume Game";
+});
+
+socket.on('resume-game-update', ()=>{
+  TimerObj.start();
+  isPaused = false;
+  pbutton.innerHTML = "Pause Game";
 });
 
 ///////////////////////////////////////////////
@@ -98,6 +117,11 @@ wbutton.addEventListener('click', function(e){
     passOrBuzz();
 });
 
+pbutton.addEventListener('click', function(e){
+	  e.preventDefault();
+    pauseOrResumeGame();
+});
+
 TimerObj.addEventListener('secondsUpdated', function(e){
   gtimer.innerHTML = TimerObj.getTimeValues().toString();
 });
@@ -113,6 +137,16 @@ TimerObj.addEventListener('targetAchieved', function(e){
 function startGame(){
   socket.emit('start-game');
 }
+
+function pauseOrResumeGame(){
+  if( isPaused){
+    socket.emit('resume-game');
+  }
+  else{
+    socket.emit('pause-game');
+  }
+}
+
 
 function endRound( _current_player_id){
   console.log('in endRound()');
@@ -162,7 +196,8 @@ function clientStartTimer(){
 }
 
 function hasGameStarted(){
-  if( GS.getCurrentState==0){
+  if( GS.getCurrentState==0 || resetGame==true){
+    resetGame=false;
     return false;
   }
   else{
@@ -235,12 +270,55 @@ function updateClientDOM( _GS){
   if( _GS.getCurrentState == 4){
     TimerObj.stop(); // stop the timer.
     gtimer.innerHTML = '00:00:00';
-    sbutton.style.display = "inline";
+    pbutton.style.display = "none";    // hide the pause button
+    sbutton.style.display = "inline";  // show the start next round button
   }
   // if we are starting a round
   if( (_GS.getCurrentState == 1 && _GS.getPreviousState == 4) || (_GS.getCurrentState == 1 && _GS.getPreviousState == 0)) {
-    sbutton.style.display = "none"; // hide the start next round button
+    sbutton.style.display = "none";    // hide the start next round button
+    pbutton.style.display = "inline";  // show the pause button
 
+    clientStartTimer(); // start the timer for the round
+  }
+  // if we are just starting the game, we need to update team numbers and scores in the DOM.
+  if( _GS.getCurrentState == 1 && _GS.getPreviousState == 0){
+    resetGame = false; // TEMPORARY need better way to handle reset game
+    qrcode.style.display = "none";
+    updatePlayerDOM( _GS);
+  }
+  // if we are in an active game (i.e., not the init state)
+  if( _GS.getCurrentState != 0){
+    // my current player number and team number
+    let _player_me = _GS.getPlayerById(socket.id);
+    let _team_me = _GS.players[_player_me].team;
+    let _active_team = _GS.getActiveTeam;
+    let _active_player = _GS.getActivePlayer;
+
+    // all teams and team scores
+    let _team_scores = _GS.getScoreEachTeam();
+    let _teams = Object.keys(_team_scores);
+    let _playerinfomsg = " You are Player "+String(socket.id).substring(0,6)+" on Team "+String(_teams[_team_me])+"." // " - Score: "+String(_team_scores[_teams[_team_me]])+".";
+    console.log('TEAM SCORES: ', _team_scores);
+    updatePlayerDOM( _GS);
+
+    // if active team, then only show word card to the active player giving clues.
+    if( _team_me == _active_team && _active_player != _player_me){
+      guesscardmsg.style.display = "inline";
+      worcard.style.display = "none";
+      _playerinfomsg += " YOU ARE GUESSING THE WORD!"
+    }
+    else if( _team_me == _active_team && _active_player == _player_me){
+      guesscardmsg.style.display = "none";
+      worcard.style.display = "inline";
+      _playerinfomsg += " YOU ARE GIVING CLUES!"
+    }
+    else{
+      guesscardmsg.style.display = "none";
+      worcard.style.display = "inline";
+      _playerinfomsg += " IT IS OTHER TEAM'S TURN. CATCH THEM SAYING A TABOOO WORD!"
+    }
+
+    // show new word card
     let wordcard = _GS.getWord; // show new word card
     word2guess.innerHTML = wordcard["guess_word"];
     tabword1.innerHTML = wordcard["taboo_word1"];
@@ -249,25 +327,16 @@ function updateClientDOM( _GS){
     tabword4.innerHTML = wordcard["taboo_word4"];
     tabword5.innerHTML = wordcard["taboo_word5"];
 
-    clientStartTimer(); // start the timer for the round
-  }
-  // if we are just starting the game, we need to update team numbers and scores in the DOM.
-  if( _GS.getCurrentState == 1 && _GS.getPreviousState == 0){
-    updatePlayerDOM( _GS);
-  }
-  // if we are in an active game (i.e., not the init state)
-  if( _GS.getCurrentState != 0){
-    // my current player number and team number
-    let _player_me = _GS.getPlayerById(socket.id);
-    let _team_me = _GS.players[_player_me].team;
-    // all teams and team scores
-    let _team_scores = _GS.getScoreEachTeam();
-    let _teams = Object.keys(_team_scores);
-    let _playerinfomsg = " You are Player "+String(socket.id).substring(0,6)+" on Team "+String(_teams[_team_me])+" - Score: "+String(_team_scores[_teams[_team_me]])+".";
-    console.log('TEAM SCORES: ', _team_scores);
-    updatePlayerDOM( _GS);
     playerinfomsg.innerHTML = _playerinfomsg;
     sbutton.innerHTML = "Start Next Round";
+  }
+  // if we ended a game
+  if( _GS.getCurrentState == 5){
+    resetGame = true;
+    sbutton.innerHTML = "Start New Game";
+    pbutton.style.display = "none";
+    sbutton.style.display = "inline";
+    qrcode.style.display = "inline";
   }
 
   return;

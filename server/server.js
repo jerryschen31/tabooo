@@ -109,6 +109,13 @@ io.on('connection', (socket)=>{
       io.emit('update-state', GS);
     });
 
+    socket.on('pause-game', ()=>{
+      io.emit('pause-game-update');
+    });
+
+    socket.on('resume-game', ()=>{
+      io.emit('resume-game-update');
+    });
     ////////////////////////////////
     // EVENT FROM THIS CLIENT: handle any game event
     ////////////////////////////////
