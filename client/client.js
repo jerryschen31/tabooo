@@ -9,7 +9,7 @@
 import { GameState, StateArray, initGameState, replaceGameStateVars } from './shared/states.js';
 
 var GS = initGameState(); // game state object
-var PA = [];              // player array object
+var PA = [];              // player array object - for displaying player grid
 var PA_ids = [];          // associated IDs for player array
 var resetGame = true;     // toggle if we start a new game
 var isPaused = false;     // is the game paused or not
@@ -51,9 +51,15 @@ socket.on('connect', ()=>{
 
 socket.on('disconnect', ()=>{
     console.log('User disconnected');
-    alreadyPrompted = false;
+    // alreadyPrompted = false;
 });
 
+socket.on('user-connected', (GSobj)=>{
+  GS = replaceGameStateVars(GS, GSobj);
+  addExistingPlayers(GS.players);
+});
+
+/*
 socket.on('user-connected', (PA_object)=>{
   let _PA = PA_object['PA'];  // current array of connected players
   let _P = PA_object['P'];    // newly connected player
@@ -67,10 +73,12 @@ socket.on('user-connected', (PA_object)=>{
   addExistingPlayers(_PA);
   addPlayer(_P);  // finally add the new player
 });
+*/
 
-
-socket.on('user-disconnected', (_pid)=>{
+socket.on('user-disconnected', (GSandPid)=>{
   // remove DOM elements associated with the disconnected player
+  let _pid = GSandPid["pid"];
+  GS = replaceGameStateVars(GS, GSandPid["GS"]);
   removePlayer(_pid);
 });
 
@@ -266,7 +274,7 @@ function addExistingPlayers( _PA){
   // input _PA: existing player array, from server
   for( let i=0;i<_PA.length;i++){
     if( PA_ids.indexOf(_PA[i].pid) < 0){
-      console.log('Adding previous player: ', _PA[i]);
+      console.log('Adding player: ', _PA[i]);
       addPlayer(_PA[i]);
     }
   }

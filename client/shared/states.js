@@ -357,6 +357,21 @@ export class GameState{
     this.state_vars["used_words"] = _w;
   }
 
+  // add and remove players
+  addPlayer( _p ){
+    this.players.push(_p);
+  }
+  removePlayerById( _pid ){
+    let _removed_player = -1;
+    for( let i=0; i<this.players.length; i++){
+      if( this.players.pid == _pid){
+        this.players.splice(i,1);
+        _removed_player = i;
+      }
+    }
+    return _removed_player;
+  }
+
   // extra basic getters and setters
   get getNextCurrentPlayer(){
     return this.state_vars["current_player"] < this.players.length - 1 ? this.state_vars["current_player"] + 1 : 0;

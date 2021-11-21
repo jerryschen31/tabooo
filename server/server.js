@@ -39,7 +39,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-var PA;       // player array
+// var PA;       // player array
 var GS;       // GameState object
 var WORDS = [];    // array of words
 
@@ -69,8 +69,9 @@ app.get('/', (req, res)=>{
 ///////////////////////////////////////////////
 function initializeGame(){
   // initialize variables here
-  PA = new PlayerArray();
+  // PA = new PlayerArray();
   setWordArray( WORDS );
+  GS = initGameState(['A','B'], [], WORDS.length);
 }
 
 
@@ -88,10 +89,12 @@ io.on('connection', (socket)=>{
     // Create a new player and add to player array
     // - but how to handle if client disconnects and reconnects? we don't want the player to pick up where he left off.
     let P = new Player(socket.id, '', '');
+    GS.addPlayer(P);
 
     // emit a 'user-connected' event to all clients -> this will trigger event on client-side
-    io.to(ROOM).emit('user-connected', {'PA': PA.players, 'P': P});
-    PA.add_player(P);
+    io.to(ROOM).emit('user-connected', GS);
+    // io.to(ROOM).emit('user-connected', {'PA': PA.players, 'P': P});
+    // PA.add_player(P);
 
     // Pass current game state to player (esp useful if player is re-connecting)
     // socket.emit('update-state',GS);
@@ -101,7 +104,7 @@ io.on('connection', (socket)=>{
     ////////////////////////////////
     socket.on('start-game', ()=>{
       // initialize the game
-      GS = initGameState(['A','B'], PA.get_players, WORDS.length);
+      // GS = initGameState(['A','B'], PA.get_players, WORDS.length);
       GS.assignTeams();
       console.log(GS.getPlayers);
       console.log(GS.getTeams);
@@ -143,8 +146,10 @@ io.on('connection', (socket)=>{
     ////////////////////////////////
     socket.on('disconnect', ()=>{
 	     console.log('user disconnected: ', socket);
-       PA.remove_playerbyid(socket.id);
-       io.to(ROOM).emit('user-disconnected', socket.id);
+       GS.removePlayerById( socket.id);
+       // PA.remove_playerbyid(socket.id);
+       // GS.setPlayers = PA.get_players;  // ?????
+       io.to(ROOM).emit('user-disconnected', {"GS": GS, "pid": socket.id});
     });
 });
 
