@@ -364,7 +364,8 @@ export class GameState{
   removePlayerById( _pid ){
     let _removed_player = -1;
     for( let i=0; i<this.players.length; i++){
-      if( this.players.pid == _pid){
+      if( this.players[i].pid == _pid){
+        console.log('PLAYER REMOVED: ', _pid);
         this.players.splice(i,1);
         _removed_player = i;
       }
@@ -655,15 +656,15 @@ function waitForNextRound( _GS, _se, _sid, _clientid = '' ){
 
 function startNextRound( _GS, _se, _sid, _clientid = '' ){
   let [_new_sid, _next_event] = _GS.setupTransitionToNextState( _sid, _se);
-  let _current_team_players = _GS.getPlayersWithinCurrentTeam();
-  let _current_team = _GS.getCurrentTeam;
-  let _current_team_score = _GS.players[_current_team_players[0]].score;
-  let _next_team_players = _GS.getPlayersWithinNextCurrentTeam();
-  let _next_team = _GS.getNextCurrentTeam; // assumes just 2 teams
-  let _next_team_score = _GS.players[_next_team_players[0]].score;
+  //let _current_team_players = _GS.getPlayersWithinCurrentTeam();
+  //let _current_team = _GS.getCurrentTeam;
+  //let _current_team_score = _GS.players[_current_team_players[0]].score;
+  //let _next_team_players = _GS.getPlayersWithinNextCurrentTeam();
+  //let _next_team = _GS.getNextCurrentTeam; // assumes just 2 teams
+  //let _next_team_score = _GS.players[_next_team_players[0]].score;
   let _current_round = _GS.getCurrentRound;
 
-  _GS.setStateStatus = "Round "+String(_current_round) + " has started! Team " + String(_current_team) + " score: " + String(_current_team_score) + ". Team "+String(_next_team)+" score: "+String(_next_team_score);
+  _GS.setStateStatus = "Round "+String(_current_round) + " has started!";
 
   return [_GS, _new_sid, _next_event];
 }

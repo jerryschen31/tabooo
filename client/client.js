@@ -51,10 +51,14 @@ socket.on('connect', ()=>{
 
 socket.on('disconnect', ()=>{
     console.log('User disconnected');
-    // alreadyPrompted = false;
 });
 
 socket.on('user-connected', (GSobj)=>{
+  if( _player_name_updated == false){
+    pname = window.prompt("What's your Name?",socket.id);
+    _player_name_updated = true;
+    socket.emit('update-player-name', {"pid": socket.id, "pname": pname});
+  }
   GS = replaceGameStateVars(GS, GSobj);
   addExistingPlayers(GS.players);
 });
@@ -251,6 +255,7 @@ function addPlayer(P){
   psquare.appendChild(psquare_team);
   psquare.appendChild(psquare_score);
   playergrid.appendChild(psquare);
+  updatePlayerDOM( GS);
 }
 
 function removePlayer(_pid){
@@ -267,6 +272,7 @@ function removePlayer(_pid){
       PA_ids.splice(i,1);
     }
   }
+  updatePlayerDOM( GS);
 }
 
 function addExistingPlayers( _PA){
@@ -306,10 +312,12 @@ function updateClientDOM( _GS){
   if( _GS.getCurrentState == 1 && _GS.getPreviousState == 0){
     resetGame = false; // TEMPORARY need better way to handle reset game
     qrcode.style.display = "none";
+    /*
     if( _player_name_updated == false){
       socket.emit('update-player-name', {"pid": socket.id, "pname": pname});
       _player_name_updated = true;
     }
+    */
   }
   // if we are in an active game (i.e., not the init state)
   if( _GS.getCurrentState != 0){

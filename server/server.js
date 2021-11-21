@@ -45,14 +45,6 @@ var WORDS = [];    // array of words
 
 const ROOM = 'tabooo';
 
-// get all words from CSV: guess_word, taboo_word1,... taboo_word5
-fs.createReadStream(path.resolve(__dirname, 'words.csv'))
-  .pipe(csv.parse({ headers: true }))
-  .on('error', error => console.error(error))
-  .on('data', row => WORDS.push(row))
-  .on('end', rowCount => {console.log(WORDS); console.log(`Parsed ${rowCount} rows`);});
-
-
 ///////////////////////////////////////////////
 // Express stuff
 ///////////////////////////////////////////////
@@ -70,7 +62,17 @@ app.get('/', (req, res)=>{
 function initializeGame(){
   // initialize variables here
   // PA = new PlayerArray();
+  // get all words from CSV: guess_word, taboo_word1,... taboo_word5
+  fs.createReadStream(path.resolve(__dirname, 'words.csv'))
+    .pipe(csv.parse({ headers: true }))
+    .on('error', error => console.error(error))
+    .on('data', row => WORDS.push(row))
+    .on('end', rowCount => {setupGame();});
+}
+
+function setupGame(){
   setWordArray( WORDS );
+  console.log('WORDS LENGTH: ', WORDS.length);
   GS = initGameState(['A','B'], [], WORDS.length);
 }
 
@@ -146,7 +148,9 @@ io.on('connection', (socket)=>{
     ////////////////////////////////
     socket.on('disconnect', ()=>{
 	     console.log('user disconnected: ', socket);
-       GS.removePlayerById( socket.id);
+       let whichid_removed = GS.removePlayerById( socket.id);
+       console.log('pLAYER REMOVED: ', whichid_removed);
+       console.log('CURRENT PLAYERS: ', GS.players);
        // PA.remove_playerbyid(socket.id);
        // GS.setPlayers = PA.get_players;  // ?????
        io.to(ROOM).emit('user-disconnected', {"GS": GS, "pid": socket.id});

@@ -67,6 +67,9 @@
           border: 4px solid #FF0000;
           background-color: #EFFD5F;
       }
+      .buttonsize {
+        font-size: 20px;
+      }
     </style>
   </head>
   <body>
@@ -89,10 +92,10 @@
         <!-- central game board. For tabooo, show buttons, timer and card here -->
 	<div id="timer_div"><h3><span id="timer"></span></h3></div>
 	<div id="buttons">
-    <button id="sbutton">Start Game</button>
-    <button id="pbutton">Pause Game</button>
-	  <button id="cbutton">Team Guessed Correct!</button>
-	  <button id="wbutton">Pass / Got Buzzed!</button>
+    <button id="sbutton" class="buttonsize">Start Game</button>
+    <button id="pbutton" class="buttonsize">Pause Game</button>
+	  <button id="cbutton" class="buttonsize">Team Guessed Correct!</button>
+	  <button id="wbutton" class="buttonsize">Pass / Got Buzzed!</button>
 	</div>
 	<div id="wordcard">
 	  <h2><span id="word2guess_header">Word to Guess: </span><span id="word2guess">ELEPHANT</span></h2>
