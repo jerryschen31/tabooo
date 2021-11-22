@@ -44,6 +44,7 @@ var GS;       // GameState object
 var WORDS = [];    // array of words
 
 var CONNECTED_PLAYERS = [];
+var CONNECTED_SOCKET_IDS = {};
 const ROOM = 'tabooo';
 
 ///////////////////////////////////////////////
@@ -115,6 +116,7 @@ io.on('connection', (socket)=>{
         GS.addPlayer(P);
         CONNECTED_PLAYERS.push(P);
       }
+      CONNECTED_SOCKET_IDS[socket.id] = playerinfo["clientid"];
       io.to(ROOM).emit('player-added', GS);
     }); // {"pid": socket.id, "pname": pname, "clientid": myid});')
 
@@ -131,12 +133,12 @@ io.on('connection', (socket)=>{
     ////////////////////////////////
     socket.on('disconnect', ()=>{
 	     console.log('user disconnected: ', socket.id);  // socket - shows everything
-       let whichid_removed = GS.removePlayerById( socket.id);
+       let whichid_removed = GS.removePlayerById( CONNECTED_SOCKET_IDS[socket.id]);
        console.log('PLAYER REMOVED: ', whichid_removed);
        console.log('CURRENT PLAYERS: ', GS.players);
        // PA.remove_playerbyid(socket.id);
        // GS.setPlayers = PA.get_players;  // ?????
-       io.to(ROOM).emit('user-disconnected', {"GS": GS, "pid": socket.id});
+       io.to(ROOM).emit('user-disconnected', {"GS": GS, "pid": CONNECTED_SOCKET_IDS[socket.id]});
     });
 
 
