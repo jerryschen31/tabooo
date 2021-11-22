@@ -148,7 +148,7 @@ io.on('connection', (socket)=>{
     // CLIENT EVENT: auto-called when this user disconnects
     ////////////////////////////////
     socket.on('disconnect', ()=>{
-	     console.log('user disconnected: ', socket);
+	     console.log('user disconnected: ', socket.id);  // socket - shows everything
        let whichid_removed = GS.removePlayerById( socket.id);
        console.log('PLAYER REMOVED: ', whichid_removed);
        console.log('CURRENT PLAYERS: ', GS.players);

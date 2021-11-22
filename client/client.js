@@ -17,11 +17,14 @@ var pname = '';           // your name
 var _player_name_updated = false;
 var alreadyPrompted = false;
 
+/*
 var socket = io('http://35.160.188.146:3000', {
   'reconnection': true,
   'reconnectionDelay': 500,
   'reconnectionAttempts': 10
 });
+*/
+var socket = io();
 
 let sbutton = document.getElementById('sbutton');
 let cbutton = document.getElementById('cbutton');
