@@ -358,7 +358,16 @@ export class GameState{
 
   // add and remove players
   addPlayer( _p ){
-    this.players.push(_p);
+    // don't add duplicate player
+    let _player_exists = false;
+    for( let i=0;i<this.players.length;i++){
+      if( this.players[i].pid == _p.pid){
+        _player_exists = true;
+      }
+    }
+    if( !player_exists){
+      this.players.push(_p);
+    }
   }
   removePlayerById( _pid ){
     let _removed_player = -1;

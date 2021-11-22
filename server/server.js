@@ -119,6 +119,14 @@ io.on('connection', (socket)=>{
     }); // {"pid": socket.id, "pname": pname, "clientid": myid});')
 
     ////////////////////////////////
+    // CLIENT EVENT: auto-called when a user reconnects
+    ////////////////////////////////
+    socket.on('reconnect', ()=>{
+      // get reconnected player back up to speed on current game state.
+      io.to(socket.id).emit('update-player-dom', GS);
+    });
+
+    ////////////////////////////////
     // CLIENT EVENT: auto-called when this user disconnects
     ////////////////////////////////
     socket.on('disconnect', ()=>{
