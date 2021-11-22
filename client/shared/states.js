@@ -145,7 +145,6 @@ export function setWordArray( _words ){
 }
 
 export function getWordCard( _windex ){
-  console.log(WA);
   console.log('in getWordCard()');
   console.log('word index', _windex);
   return WA[_windex];

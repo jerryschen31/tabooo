@@ -7,6 +7,7 @@
 
 */
 import { GameState, StateArray, initGameState, replaceGameStateVars } from './shared/states.js';
+// import { v4 as uuidv4 } from './node_modules/uuid/dist/v4.js'; // unique ID for client - useful for ID when reconnecting
 
 var GS = initGameState(); // game state object
 var PA = [];              // player array object - for displaying player grid
@@ -16,6 +17,8 @@ var isPaused = false;     // is the game paused or not
 var pname = '';           // your name
 var _player_name_updated = false;
 var alreadyPrompted = false;
+var myid = String(createUUID()).substring(0,8);
+console.log('MY CLIENT ID: ', myid);
 
 /*
 var socket = io('http://35.160.188.146:3000', {
@@ -50,43 +53,44 @@ var TimerObj = new easytimer.Timer({countdown: true, startValues: {seconds: 15}}
 
 let QRC = new QRCode(qrcode, "http://35.160.188.146:3000");
 
+
+function createUUID() {
+    var s = [];
+    var hexDigits = "0123456789abcdef";
+    for (var i = 0; i < 36; i++) {
+        s[i] = hexDigits.substr(Math.floor(Math.random() * 0x10), 1);
+    }
+    s[14] = "4";  // bits 12-15 of the time_hi_and_version field to 0010
+    s[19] = hexDigits.substr((s[19] & 0x3) | 0x8, 1);  // bits 6-7 of the clock_seq_hi_and_reserved to 01
+    s[8] = s[13] = s[18] = s[23] = "-";
+    return s.join("");
+}
+
 ///////////////////////////////////////////////
 // Socket Event Functions
 ///////////////////////////////////////////////
 socket.on('connect', ()=>{
-    console.log('You connected to server as: '+socket.id);
+    console.log('You are connecting to server as: '+socket.id);
 });
 
 socket.on('disconnect', ()=>{
     console.log('User disconnected');
-    _player_name_updated = false;
+    // _player_name_updated = false;
 });
 
-socket.on('user-connected', (GSobj)=>{
+socket.on('connection-established', ()=>{
   if( _player_name_updated == false){
-    pname = window.prompt("What's your Name?",socket.id);
+    pname = window.prompt("What's your Name?", myid);
     _player_name_updated = true;
-    socket.emit('update-player-name', {"pid": socket.id, "pname": pname});
   }
+  socket.emit('add-player-to-game', {"pid": socket.id, "pname": pname, "clientid": myid});
+});
+
+// called after a player has been added to the game.
+socket.on('player-added', (GSobj)=>{
   GS = replaceGameStateVars(GS, GSobj);
   addExistingPlayers(GS.players);
 });
-
-/*
-socket.on('user-connected', (PA_object)=>{
-  let _PA = PA_object['PA'];  // current array of connected players
-  let _P = PA_object['P'];    // newly connected player
-  console.log('Existing PA from server: ', _PA);
-  console.log('New Player: ', _P);
-  console.log('Client PA: ', PA);
-  if( alreadyPrompted == false){
-    pname = window.prompt("What's your Name?",socket.id);
-    alreadyPrompted = true;
-  }
-  addExistingPlayers(_PA);
-  addPlayer(_P);  // finally add the new player
-});
-*/
 
 socket.on('user-disconnected', (GSandPid)=>{
   // remove DOM elements associated with the disconnected player
@@ -187,11 +191,11 @@ function endRound( _current_player_id){
   console.log('in endRound()');
   // ONLY the current player should let the server know its time for the next turn.
   console.log('gamestate object: ', GS);
-  if( _current_player_id == socket.id){
+  if( _current_player_id == myid){
     console.log('in endRound(): sending timerUp client event to server');
     let client_event_info = {"client_event": 'timerUp',
                               "client_state": GS.getCurrentState,
-                              "client_id": socket.id};
+                              "client_id": myid};
     socket.emit('client-event', client_event_info);
   }
   else{
@@ -202,24 +206,24 @@ function endRound( _current_player_id){
 function startNextRound(){
   let client_event_info = {"client_event": 'startNextRound',
                             "client_state": GS.getCurrentState,
-                            "client_id": socket.id};
+                            "client_id": myid};
   socket.emit('client-event', client_event_info);
 }
 
 function correctGuess(){
-  if( GS.getCurrentPlayerId == socket.id){
+  if( GS.getCurrentPlayerId == myid){
     let client_event_info = {"client_event": 'correctButtonClicked',
                              "client_state": GS.getCurrentState,
-                             "client_id": socket.id};
+                             "client_id": myid};
     socket.emit('client-event', client_event_info);
   }
 };
 
 function passOrBuzz(){
-  if( GS.getCurrentPlayerId == socket.id){
+  if( GS.getCurrentPlayerId == myid){
     let client_event_info = {"client_event": 'passButtonClicked',
                            "client_state": GS.getCurrentState,
-                           "client_id": socket.id};
+                           "client_id": myid};
     socket.emit('client-event', client_event_info);
   }
 };
@@ -331,7 +335,7 @@ function updateClientDOM( _GS){
   // if we are in an active game (i.e., not the init state)
   if( _GS.getCurrentState != 0){
     // my current player number and team number
-    let _player_me = _GS.getPlayerById(socket.id);
+    let _player_me = _GS.getPlayerById(myid);
     let _team_me = _GS.players[_player_me].team;
     let _active_team = _GS.getActiveTeam;
     let _active_player = _GS.getActivePlayer;

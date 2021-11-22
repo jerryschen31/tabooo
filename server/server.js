@@ -43,6 +43,7 @@ const io = new Server(server);
 var GS;       // GameState object
 var WORDS = [];    // array of words
 
+var CONNECTED_PLAYERS = [];
 const ROOM = 'tabooo';
 
 ///////////////////////////////////////////////
@@ -81,25 +82,55 @@ function setupGame(){
 // Socket Event Functions
 ///////////////////////////////////////////////
 
+function playerReconnecting( pinfo ){
+  let reconnect_p = -1;
+  for( let i=0;i<CONNECTED_PLAYERS.length;i++){
+    if( CONNECTED_PLAYERS[i].pid == pinfo["clientid"]){
+      reconnect_p = i;
+    }
+  }
+  return reconnect_p;
+}
+
 /// Called when a user successfully connects (through a socket)
 // the line "socket = io()" on the client-side HTML/JS file auto-connects to this server
 // (which just sent the HTML/JS to the client)
 io.on('connection', (socket)=>{
     console.log('user connected: '+socket.id);
+    // console.log('SOCKET INFO: ', socket);
     socket.join(ROOM);
 
-    // Create a new player and add to player array
-    // - but how to handle if client disconnects and reconnects? we don't want the player to pick up where he left off.
-    let P = new Player(socket.id, '', '');
-    GS.addPlayer(P);
+    // send 'connection-established' back to specific user
+    io.to(socket.id).emit('connection-established');
 
-    // emit a 'user-connected' event to all clients -> this will trigger event on client-side
-    io.to(ROOM).emit('user-connected', GS);
-    // io.to(ROOM).emit('user-connected', {'PA': PA.players, 'P': P});
-    // PA.add_player(P);
+    socket.on('add-player-to-game', (playerinfo)=>{
+      console.log('ADDING PLAYER TO GAME', playerinfo);
+      // check if player is reconnecting (saved their client ID)
+      let player_reconnecting = playerReconnecting( playerinfo);
+      if( player_reconnecting >= 0 ){
+        GS.addPlayer(CONNECTED_PLAYERS[player_reconnecting]);
+      }
+      else{
+        let P = new Player(playerinfo["clientid"], playerinfo["pname"], '');
+        GS.addPlayer(P);
+        CONNECTED_PLAYERS.push(P);
+      }
+      io.to(ROOM).emit('player-added', GS);
+    }); // {"pid": socket.id, "pname": pname, "clientid": myid});')
 
-    // Pass current game state to player (esp useful if player is re-connecting)
-    // socket.emit('update-state',GS);
+    ////////////////////////////////
+    // CLIENT EVENT: auto-called when this user disconnects
+    ////////////////////////////////
+    socket.on('disconnect', ()=>{
+	     console.log('user disconnected: ', socket.id);  // socket - shows everything
+       let whichid_removed = GS.removePlayerById( socket.id);
+       console.log('PLAYER REMOVED: ', whichid_removed);
+       console.log('CURRENT PLAYERS: ', GS.players);
+       // PA.remove_playerbyid(socket.id);
+       // GS.setPlayers = PA.get_players;  // ?????
+       io.to(ROOM).emit('user-disconnected', {"GS": GS, "pid": socket.id});
+    });
+
 
     ////////////////////////////////
     // EVENT FROM THIS CLIENT: start a new game
@@ -107,6 +138,7 @@ io.on('connection', (socket)=>{
     socket.on('start-game', ()=>{
       // initialize the game
       // GS = initGameState(['A','B'], PA.get_players, WORDS.length);
+      console.log('STARTING GAME! ');
       GS.resetGameState();
       GS.assignTeams();
       console.log(GS.getPlayers);
@@ -144,18 +176,6 @@ io.on('connection', (socket)=>{
       //                             "state_vars": state_update["state_var_update_JSON"]});
     });
 
-    ////////////////////////////////
-    // CLIENT EVENT: auto-called when this user disconnects
-    ////////////////////////////////
-    socket.on('disconnect', ()=>{
-	     console.log('user disconnected: ', socket.id);  // socket - shows everything
-       let whichid_removed = GS.removePlayerById( socket.id);
-       console.log('PLAYER REMOVED: ', whichid_removed);
-       console.log('CURRENT PLAYERS: ', GS.players);
-       // PA.remove_playerbyid(socket.id);
-       // GS.setPlayers = PA.get_players;  // ?????
-       io.to(ROOM).emit('user-disconnected', {"GS": GS, "pid": socket.id});
-    });
 });
 
 /// listen for any connection issues
