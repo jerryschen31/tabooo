@@ -373,6 +373,29 @@ export class GameState{
     return _removed_player;
   }
 
+  // reset game state
+  resetGameState(){
+    for( let i=0;i<this.players.length;i++ ){
+      this.players[i].score = 0;
+    }
+    this.state_vars["previous_state"] = 0;
+    this.state_vars["current_state"] = 0;
+    this.state_vars["current_event"] = ''; // event that is happening or just happened.
+    this.state_vars["next_state"] = 0;
+    this.state_vars["next_event"] = '';
+    this.state_vars["state_status"] = 'OK';
+    this.state_vars["current_player_each_team"] = {}; // index of current player within each team - e.g., {0: 0, 1: 2}
+    this.state_vars["active_player_each_team"] = {};  // index of active player within each team - e.g., {0: 0, 1: 2}
+    this.state_vars["active_team"] = 0;
+    this.state_vars["current_team"] = 0;
+    this.state_vars["active_player"] = 0;
+    this.state_vars["current_player"] = 0;
+    this.state_vars["current_round"] = 1;
+    this.state_vars["word"] = {};  // contains guess word and 5 tabooo words
+    this.state_vars["word_index"] = 0; // keep track of word indexes.
+    this.state_vars["used_words"] = [];
+  }
+
   // extra basic getters and setters
   get getNextCurrentPlayer(){
     return this.state_vars["current_player"] < this.players.length - 1 ? this.state_vars["current_player"] + 1 : 0;

@@ -17,7 +17,12 @@ var pname = '';           // your name
 var _player_name_updated = false;
 var alreadyPrompted = false;
 
-var socket = io();
+var socket = io('http://35.160.188.146:3000', {
+  'reconnection': true,
+  'reconnectionDelay': 500,
+  'reconnectionAttempts': 10
+});
+
 let sbutton = document.getElementById('sbutton');
 let cbutton = document.getElementById('cbutton');
 let wbutton = document.getElementById('wbutton');
@@ -51,6 +56,7 @@ socket.on('connect', ()=>{
 
 socket.on('disconnect', ()=>{
     console.log('User disconnected');
+    _player_name_updated = false;
 });
 
 socket.on('user-connected', (GSobj)=>{

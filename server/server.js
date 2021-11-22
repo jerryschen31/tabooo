@@ -107,6 +107,7 @@ io.on('connection', (socket)=>{
     socket.on('start-game', ()=>{
       // initialize the game
       // GS = initGameState(['A','B'], PA.get_players, WORDS.length);
+      GS.resetGameState();
       GS.assignTeams();
       console.log(GS.getPlayers);
       console.log(GS.getTeams);
@@ -149,7 +150,7 @@ io.on('connection', (socket)=>{
     socket.on('disconnect', ()=>{
 	     console.log('user disconnected: ', socket);
        let whichid_removed = GS.removePlayerById( socket.id);
-       console.log('pLAYER REMOVED: ', whichid_removed);
+       console.log('PLAYER REMOVED: ', whichid_removed);
        console.log('CURRENT PLAYERS: ', GS.players);
        // PA.remove_playerbyid(socket.id);
        // GS.setPlayers = PA.get_players;  // ?????
