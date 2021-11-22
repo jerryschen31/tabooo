@@ -365,7 +365,7 @@ export class GameState{
         _player_exists = true;
       }
     }
-    if( !player_exists){
+    if( !_player_exists){
       this.players.push(_p);
     }
   }
